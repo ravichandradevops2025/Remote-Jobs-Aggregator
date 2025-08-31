@@ -1,0 +1,37 @@
+name: Nightly Job Scraper
+
+on:
+  schedule:
+    # Runs at 19:30 UTC (01:00 AM IST next day)
+    - cron: '30 19 * * *'
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  scrape-jobs:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+    
+    - name: Run job scraper
+      env:
+        SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+      run: |
+        python scripts/run_scraper.py
+    
+    - name: Notify on failure
+      if: failure()
+      run: |
+        echo "Job scraping failed at $(date)"
+        # Add notification logic here (email, Slack, etc.)
