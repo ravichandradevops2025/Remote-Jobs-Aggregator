@@ -1,3 +1,4 @@
+cat > backend/database.py << 'EOF'
 import os
 import asyncpg
 from typing import Optional
@@ -31,8 +32,7 @@ class SupabaseAdapter:
         self.client = client
     
     async def fetch_all(self, query: str, params: list = None):
-        # Convert raw SQL to Supabase queries - simplified for this MVP
-        # In production, use proper Supabase SDK methods
+        # For now, use basic Supabase queries
         response = self.client.table('jobs').select('*').execute()
         return response.data
     
@@ -41,7 +41,7 @@ class SupabaseAdapter:
         return response.data[0] if response.data else None
     
     async def execute(self, query: str, params: list = None):
-        # For inserts/updates, use Supabase SDK
+        # For inserts, use Supabase SDK
         pass
 
 class PostgresAdapter:
@@ -89,3 +89,4 @@ async def create_tables():
     """
     
     await db.execute(create_table_sql)
+EOF
