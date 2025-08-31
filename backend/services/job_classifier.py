@@ -1,4 +1,3 @@
-cat > backend/services/job_classifier.py << 'EOF'
 from typing import Dict, Any
 
 class JobClassifier:

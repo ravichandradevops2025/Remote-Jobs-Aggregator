@@ -1,4 +1,3 @@
-cat > backend/database.py << 'EOF'
 import os
 import asyncpg
 from typing import Optional

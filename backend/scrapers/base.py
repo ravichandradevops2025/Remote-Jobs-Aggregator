@@ -1,4 +1,3 @@
-cat > backend/scrapers/base.py << 'EOF'
 import asyncio
 import aiohttp
 from abc import ABC, abstractmethod

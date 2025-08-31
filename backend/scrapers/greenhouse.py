@@ -1,4 +1,3 @@
-cat > backend/scrapers/greenhouse.py << 'EOF'
 from typing import List, Dict, Any
 from .base import BaseScraper
 import uuid

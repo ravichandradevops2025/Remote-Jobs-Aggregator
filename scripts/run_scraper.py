@@ -1,4 +1,3 @@
-cat > scripts/run_scraper.py << 'EOF'
 #!/usr/bin/env python3
 import asyncio
 import os

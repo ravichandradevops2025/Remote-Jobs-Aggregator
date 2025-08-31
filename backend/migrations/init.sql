@@ -1,4 +1,3 @@
-cat > backend/migrations/init.sql << 'EOF'
 -- Initialize database schema
 CREATE TABLE IF NOT EXISTS jobs (
     id VARCHAR(255) PRIMARY KEY,
