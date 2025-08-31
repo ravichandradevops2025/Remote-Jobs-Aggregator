@@ -88,4 +88,3 @@ async def create_tables():
     """
     
     await db.execute(create_table_sql)
-EOF

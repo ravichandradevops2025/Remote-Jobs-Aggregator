@@ -68,4 +68,3 @@ class BaseScraper(ABC):
         ]).lower()
         
         return any(keyword in text_to_check for keyword in remote_keywords)
-EOF

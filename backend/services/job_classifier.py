@@ -16,4 +16,3 @@ class JobClassifier:
                 return domain
         
         return 'Other'
-EOF

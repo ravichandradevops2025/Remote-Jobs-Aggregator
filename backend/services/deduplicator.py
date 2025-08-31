@@ -21,4 +21,3 @@ class JobDeduplicator:
         
         logger.info(f"Deduplicated {len(jobs)} -> {len(unique_jobs)} jobs")
         return unique_jobs
-EOF

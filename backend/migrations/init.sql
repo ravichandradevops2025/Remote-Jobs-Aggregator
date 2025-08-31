@@ -19,4 +19,3 @@ CREATE TABLE IF NOT EXISTS jobs (
 CREATE INDEX IF NOT EXISTS idx_jobs_domain ON jobs(domain);
 CREATE INDEX IF NOT EXISTS idx_jobs_remote ON jobs(remote);
 CREATE INDEX IF NOT EXISTS idx_jobs_created_at ON jobs(created_at);
-EOF

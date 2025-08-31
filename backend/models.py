@@ -44,4 +44,3 @@ class JobsListResponse(BaseModel):
     total: int
     page: int
     pages: int
-EOF

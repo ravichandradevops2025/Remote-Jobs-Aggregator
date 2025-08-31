@@ -63,4 +63,3 @@ class GreenHouseScraper(BaseScraper):
             'source': 'Greenhouse',
             'source_job_id': job_id
         }
-EOF
