@@ -13,7 +13,6 @@ class LeverScraper(BaseScraper):
         self.base_url = f"https://api.lever.co/v0/postings/{company_slug}"
     
     async def scrape_jobs(self) -> List[Dict[str, Any]]:
-        """Scrape jobs from Lever API"""
         logger.info(f"Scraping Lever jobs for {self.company_name}")
         
         response = await self.fetch_url(self.base_url)
@@ -30,11 +29,9 @@ class LeverScraper(BaseScraper):
             except Exception as e:
                 logger.error(f"Error parsing Lever job: {e}")
         
-        logger.info(f"Found {len(jobs)} jobs for {self.company_name}")
         return jobs
     
     def _parse_lever_job(self, job_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Parse a single Lever job"""
         job_id = job_data.get('id', '')
         title = job_data.get('text', '')
         
@@ -55,27 +52,30 @@ class LeverScraper(BaseScraper):
         elif job_data.get('descriptionPlain'):
             description = job_data['descriptionPlain']
         
-        # Check if remote
+        # Enhanced remote detection
         remote = self.is_remote_job({
             'title': title,
             'description': description,
             'location': location or ''
         })
         
-        # Extract salary if available
-        salary_min, salary_max = self.extract_salary(description)
+        # Also check Lever's specific location indicators
+        if location:
+            location_lower = location.lower()
+            if any(keyword in location_lower for keyword in ['remote', 'anywhere', 'distributed']):
+                remote = True
         
         return {
             'id': str(uuid.uuid4()),
             'title': title,
             'company': self.company_name,
-            'description': description[:2000],  # Truncate long descriptions
+            'description': description[:2000],
             'apply_url': apply_url,
             'location': location,
             'remote': remote,
-            'salary_min': salary_min,
-            'salary_max': salary_max,
-            'domain': 'Other',  # Will be classified later
+            'salary_min': None,
+            'salary_max': None,
+            'domain': 'Other',
             'source': 'Lever',
             'source_job_id': job_id
         }

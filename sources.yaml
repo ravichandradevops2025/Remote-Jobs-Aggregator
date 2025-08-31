@@ -1,16 +1,29 @@
-# Configuration for job sources
-# Add new companies here to scrape their job boards
+# Remote-focused job sources configuration
 
+# Greenhouse companies (known for remote work)
 greenhouse_companies:
   - slug: "airbnb"
     name: "Airbnb"
   - slug: "stripe"
-    name: "Stripe"
+    name: "Stripe"  
   - slug: "spotify"
     name: "Spotify"
   - slug: "doordash"
     name: "DoorDash"
+  - slug: "gitlab"
+    name: "GitLab"
+  - slug: "shopify"
+    name: "Shopify"
+  - slug: "github"
+    name: "GitHub"
+  - slug: "automattic"
+    name: "Automattic"
+  - slug: "buffer"
+    name: "Buffer"
+  - slug: "zapier"
+    name: "Zapier"
 
+# Lever companies (remote-friendly)
 lever_companies:
   - slug: "netflix"
     name: "Netflix"
@@ -18,17 +31,105 @@ lever_companies:
     name: "Uber"
   - slug: "lyft"
     name: "Lyft"
+  - slug: "discord"
+    name: "Discord"
+  - slug: "figma"
+    name: "Figma"
+  - slug: "notion"
+    name: "Notion"
 
+# Remote job aggregators and job boards (scraper-friendly)
 generic_feeds:
-  - url: "https://jobs.github.com/positions.json?search=remote"
-    name: "GitHub Jobs"
-    type: "json"
+  # Major remote job boards
   - url: "https://remoteok.io/api"
     name: "Remote OK"
     type: "json"
+    remote_only: true
+  
+  - url: "https://weworkremotely.com/remote-jobs.rss"
+    name: "We Work Remotely"
+    type: "rss"
+    remote_only: true
+  
+  - url: "https://remote.co/api/remote-jobs"
+    name: "Remote.co"
+    type: "json" 
+    remote_only: true
+  
+  # AngelList/Wellfound (startup jobs, many remote)
+  - url: "https://api.angel.co/1/jobs"
+    name: "AngelList"
+    type: "json"
+    params:
+      remote: "true"
+  
+  # JustRemote
+  - url: "https://justremote.co/api/jobs"
+    name: "JustRemote" 
+    type: "json"
+    remote_only: true
+  
+  # Remotive (weekly job updates)
+  - url: "https://remotive.io/api/remote-jobs"
+    name: "Remotive"
+    type: "json"
+    remote_only: true
+  
+  # Working Nomads
+  - url: "https://www.workingnomads.co/api/exposed_jobs"
+    name: "Working Nomads"
+    type: "json"
+    remote_only: true
+  
+  # JavaScript Jobs (remote filter)
+  - url: "https://jobs.github.com/positions.json?description=remote"
+    name: "GitHub Jobs"
+    type: "json"
+    remote_filter: "remote"
+  
+  # Crypto/Web3 jobs (often remote)
+  - url: "https://cryptocurrencyjobs.co/api/jobs"
+    name: "Crypto Jobs"
+    type: "json"
+  
+  # Indie Hackers jobs
+  - url: "https://www.indiehackers.com/jobs.json"
+    name: "Indie Hackers"
+    type: "json"
 
-# Rate limiting configuration
+# Alternative sources for Indian market (API-based)
+indian_job_sources:
+  # Instahyre (if they have public API)
+  - url: "https://www.instahyre.com/api/jobs/?remote=true"
+    name: "Instahyre Remote"
+    type: "json"
+    note: "Check if API is available"
+    enabled: false
+  
+  # Freshersworld remote jobs
+  - url: "https://www.freshersworld.com/jobs/remote-jobs.rss"
+    name: "Freshersworld Remote"
+    type: "rss"
+    enabled: false
+
+# Rate limiting and behavior
 rate_limits:
-  default_delay: 1.0  # seconds between requests
+  default_delay: 2.0  # 2 seconds between requests (respectful)
   max_retries: 3
   timeout: 30
+  respect_robots_txt: true
+
+# Remote job filtering keywords
+remote_keywords:
+  - "remote"
+  - "work from home"
+  - "wfh"
+  - "distributed"
+  - "anywhere"
+  - "home office" 
+  - "telecommute"
+  - "virtual"
+  - "remote first"
+  - "remote friendly"
+  - "fully remote"
+  - "100% remote"
