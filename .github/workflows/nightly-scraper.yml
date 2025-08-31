@@ -1,9 +1,12 @@
 name: Nightly Job Scraper & Export
 
 on:
+  push:        # runs on every push
+    branches:
+      - main   # or master if that's your default branch
+  workflow_dispatch:   # manual trigger
   schedule:
     - cron: '30 19 * * *'  # 01:00 AM IST daily
-  workflow_dispatch:  # Manual trigger
 
 jobs:
   scrape-and-export:
