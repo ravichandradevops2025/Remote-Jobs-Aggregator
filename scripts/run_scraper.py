@@ -14,7 +14,7 @@ from backend.scrapers.generic import GenericScraper
 from backend.scrapers.indian_companies import IndianCompanyScraper
 from backend.services.job_classifier import JobClassifier
 from backend.services.deduplicator import JobDeduplicator
-from backend.services.enhanced_remote_detector import EnhancedRemoteDetector
+from backend.enhanced_remote_detector import EnhancedRemoteDetector
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
