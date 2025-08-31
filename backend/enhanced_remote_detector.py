@@ -1,6 +1,9 @@
 from typing import Dict, Any
 import yaml
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 class EnhancedRemoteDetector:
     def __init__(self):
@@ -8,22 +11,24 @@ class EnhancedRemoteDetector:
     
     def load_remote_config(self):
         """Load remote detection configuration"""
-        config_path = os.path.join(os.path.dirname(__file__), '..', '..', 'sources.yaml')
         try:
+            config_path = os.path.join(os.path.dirname(__file__), '..', '..', 'sources.yaml')
             with open(config_path, 'r') as f:
                 config = yaml.safe_load(f)
                 self.remote_keywords = config.get('remote_keywords', {})
                 self.company_flags = config.get('company_remote_flags', {})
-        except:
+        except Exception as e:
+            logger.warning(f"Could not load sources.yaml: {e}")
             # Fallback keywords
             self.remote_keywords = {
-                'strict': ['remote', '100% remote', 'fully remote', 'distributed'],
-                'flexible': ['work from home', 'wfh', 'remote friendly']
+                'strict': ['remote', '100% remote', 'fully remote', 'distributed', 'work from anywhere'],
+                'flexible': ['work from home', 'wfh', 'remote friendly', 'telecommute', 'virtual']
             }
             self.company_flags = {
                 'gitlab': 'always_remote',
                 'automattic': 'always_remote',
-                'zapier': 'always_remote'
+                'zapier': 'always_remote',
+                'buffer': 'always_remote'
             }
     
     def is_remote_job(self, job_data: Dict[str, Any]) -> bool:
@@ -32,19 +37,19 @@ class EnhancedRemoteDetector:
         company = job_data.get('company', '').lower()
         
         # 1. Check company-specific flags first
-        if company in self.company_flags:
-            if self.company_flags[company] == 'always_remote':
+        for company_key, flag in self.company_flags.items():
+            if company_key in company and flag == 'always_remote':
                 return True
         
-        # 2. Check for strict remote keywords (high confidence)
+        # 2. Get searchable text
         text_to_check = self._get_searchable_text(job_data)
         
-        # Strict keywords = definitely remote
+        # 3. Check for strict remote keywords (high confidence)
         for keyword in self.remote_keywords.get('strict', []):
             if keyword.lower() in text_to_check:
                 return True
         
-        # 3. Check flexible keywords (medium confidence)
+        # 4. Check flexible keywords (need multiple matches)
         flexible_matches = 0
         for keyword in self.remote_keywords.get('flexible', []):
             if keyword.lower() in text_to_check:
@@ -54,7 +59,7 @@ class EnhancedRemoteDetector:
         if flexible_matches >= 2:
             return True
         
-        # 4. Location-based detection
+        # 5. Location-based detection
         location = job_data.get('location', '').lower()
         if location:
             remote_locations = [
@@ -64,7 +69,7 @@ class EnhancedRemoteDetector:
             if any(loc in location for loc in remote_locations):
                 return True
         
-        # 5. Title-based detection (high weight)
+        # 6. Title-based detection (high weight)
         title = job_data.get('title', '').lower()
         if 'remote' in title:
             return True
@@ -77,7 +82,6 @@ class EnhancedRemoteDetector:
             job_data.get('title', ''),
             job_data.get('description', ''),
             job_data.get('location', ''),
-            job_data.get('requirements', ''),  # If available
         ]
         return ' '.join(text_fields).lower()
     
@@ -89,8 +93,9 @@ class EnhancedRemoteDetector:
         confidence = 0.0
         
         # Company flags
-        if company in self.company_flags:
-            confidence += 0.9
+        for company_key, flag in self.company_flags.items():
+            if company_key in company and flag == 'always_remote':
+                confidence += 0.9
         
         # Strict keywords  
         for keyword in self.remote_keywords.get('strict', []):

@@ -8,17 +8,64 @@ from typing import List, Dict, Any
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
+# Only import what we know exists
 from backend.scrapers.greenhouse import GreenHouseScraper
 from backend.scrapers.lever import LeverScraper
-from backend.scrapers.himalayas_scraper import HimalayasScraper
-from backend.scrapers.fixed_remoteok import FixedRemoteOKScraper
 from backend.scrapers.generic import GenericScraper
 from backend.services.job_classifier import JobClassifier
 from backend.services.deduplicator import JobDeduplicator
-from backend.services.enhanced_remote_detector import EnhancedRemoteDetector
+
+# Try to import enhanced modules, fall back to basic if missing
+try:
+    from backend.scrapers.himalayas_scraper import HimalayasScraper
+    HIMALAYAS_AVAILABLE = True
+except ImportError:
+    logger.info("Himalayas scraper not available")
+    HIMALAYAS_AVAILABLE = False
+
+try:
+    from backend.scrapers.fixed_remoteok import FixedRemoteOKScraper
+    FIXED_REMOTEOK_AVAILABLE = True
+except ImportError:
+    FIXED_REMOTEOK_AVAILABLE = False
+
+try:
+    from backend.services.enhanced_remote_detector import EnhancedRemoteDetector
+    ENHANCED_DETECTOR_AVAILABLE = True
+except ImportError:
+    ENHANCED_DETECTOR_AVAILABLE = False
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+def is_remote_job_basic(job_data: Dict[str, Any]) -> bool:
+    """Basic remote job detection"""
+    remote_keywords = [
+        'remote', '100% remote', 'fully remote', 'work from home', 'wfh',
+        'distributed', 'work from anywhere', 'location independent', 
+        'remote first', 'remote friendly'
+    ]
+    
+    # Check all text fields
+    text_to_check = ' '.join([
+        job_data.get('title', ''),
+        job_data.get('description', ''),
+        job_data.get('location', '')
+    ]).lower()
+    
+    # Check for remote keywords
+    for keyword in remote_keywords:
+        if keyword in text_to_check:
+            return True
+    
+    # Company-specific rules
+    company = job_data.get('company', '').lower()
+    always_remote_companies = ['gitlab', 'automattic', 'zapier', 'buffer']
+    for remote_company in always_remote_companies:
+        if remote_company in company:
+            return True
+    
+    return False
 
 async def load_sources_config() -> Dict[str, Any]:
     config_path = os.path.join(os.path.dirname(__file__), '..', 'sources.yaml')
@@ -34,30 +81,29 @@ async def scrape_all_sources() -> List[Dict[str, Any]]:
     all_jobs = []
     rate_limit = config.get('rate_limits', {}).get('default_delay', 2.0)
     
-    # Initialize enhanced remote detector
-    remote_detector = EnhancedRemoteDetector()
+    # 1. Try Himalayas if available
+    if HIMALAYAS_AVAILABLE:
+        logger.info("🌟 Scraping Himalayas remote jobs")
+        try:
+            async with HimalayasScraper(rate_limit=rate_limit) as scraper:
+                jobs = await scraper.scrape_jobs()
+                all_jobs.extend(jobs)
+                logger.info(f"✅ Himalayas: {len(jobs)} remote jobs")
+        except Exception as e:
+            logger.error(f"❌ Himalayas failed: {e}")
     
-    # 1. 🌟 Himalayas API (Best working source)
-    logger.info("🌟 Scraping Himalayas (Premium Remote Jobs)")
-    try:
-        async with HimalayasScraper(rate_limit=rate_limit) as scraper:
-            jobs = await scraper.scrape_jobs()
-            all_jobs.extend(jobs)
-            logger.info(f"✅ Himalayas: {len(jobs)} remote jobs")
-    except Exception as e:
-        logger.error(f"❌ Himalayas failed: {e}")
+    # 2. Try Enhanced RemoteOK if available
+    if FIXED_REMOTEOK_AVAILABLE:
+        logger.info("🔄 Scraping RemoteOK with enhanced approach")
+        try:
+            async with FixedRemoteOKScraper(rate_limit=rate_limit * 2) as scraper:
+                jobs = await scraper.scrape_jobs()
+                all_jobs.extend(jobs)
+                logger.info(f"✅ RemoteOK Enhanced: {len(jobs)} remote jobs")
+        except Exception as e:
+            logger.error(f"❌ RemoteOK Enhanced failed: {e}")
     
-    # 2. 🔄 RemoteOK (Fixed approach)
-    logger.info("🔄 Scraping RemoteOK with enhanced headers")
-    try:
-        async with FixedRemoteOKScraper(rate_limit=rate_limit * 2) as scraper:  # Extra delay
-            jobs = await scraper.scrape_jobs()
-            all_jobs.extend(jobs)
-            logger.info(f"✅ RemoteOK: {len(jobs)} remote jobs")
-    except Exception as e:
-        logger.error(f"❌ RemoteOK failed: {e}")
-    
-    # 3. 📡 We Work Remotely RSS (Reliable)
+    # 3. We Work Remotely RSS (This should work)
     logger.info("📡 Scraping We Work Remotely RSS")
     try:
         async with GenericScraper(
@@ -72,10 +118,17 @@ async def scrape_all_sources() -> List[Dict[str, Any]]:
     except Exception as e:
         logger.error(f"❌ We Work Remotely failed: {e}")
     
-    # 4. 🏢 Enhanced Greenhouse Companies (Better remote detection)
-    logger.info("🏢 Scraping Greenhouse companies with enhanced remote detection")
+    # 4. Greenhouse Companies with enhanced remote detection
+    logger.info("🏢 Scraping Greenhouse companies")
     greenhouse_companies = config.get('greenhouse_companies', [])
-    for company in greenhouse_companies:
+    
+    # Use enhanced detector if available
+    if ENHANCED_DETECTOR_AVAILABLE:
+        remote_detector = EnhancedRemoteDetector()
+    else:
+        remote_detector = None
+    
+    for company in greenhouse_companies[:6]:  # Limit to first 6 to avoid too many requests
         try:
             async with GreenHouseScraper(
                 company['slug'],
@@ -87,7 +140,12 @@ async def scrape_all_sources() -> List[Dict[str, Any]]:
                 # Enhanced remote detection
                 remote_jobs = []
                 for job in all_company_jobs:
-                    if remote_detector.is_remote_job(job):
+                    if remote_detector:
+                        is_remote = remote_detector.is_remote_job(job)
+                    else:
+                        is_remote = is_remote_job_basic(job)
+                    
+                    if is_remote:
                         job['remote'] = True
                         remote_jobs.append(job)
                 
@@ -97,7 +155,7 @@ async def scrape_all_sources() -> List[Dict[str, Any]]:
         except Exception as e:
             logger.error(f"❌ {company['name']} failed: {e}")
     
-    # 5. ⚡ Working Nomads (Additional source)
+    # 5. Working Nomads (reliable source)
     logger.info("⚡ Scraping Working Nomads")
     try:
         async with GenericScraper(
@@ -115,8 +173,8 @@ async def scrape_all_sources() -> List[Dict[str, Any]]:
     return all_jobs
 
 async def main():
-    logger.info("🚀 Starting ENHANCED Remote Jobs Scraper v2.0")
-    logger.info("🎯 Focus: Remote jobs from Indian & Global companies")
+    logger.info("🚀 Starting Enhanced Remote Jobs Scraper")
+    logger.info("🎯 Focusing on reliable remote job sources")
     
     try:
         raw_jobs = await scrape_all_sources()
@@ -126,26 +184,19 @@ async def main():
             logger.warning("❌ No jobs found from any source")
             return {"status": "completed", "jobs_saved": 0}
         
-        # Enhanced processing
+        # Process jobs
         classifier = JobClassifier()
         deduplicator = JobDeduplicator()
-        remote_detector = EnhancedRemoteDetector()
         
-        # Double-check remote status with enhanced detector
-        verified_remote_jobs = []
+        # Classify all jobs
         for job in raw_jobs:
-            if remote_detector.is_remote_job(job):
-                job['remote'] = True
-                job['domain'] = classifier.classify_job(job)
-                verified_remote_jobs.append(job)
-        
-        logger.info(f"🌐 Verified remote jobs: {len(verified_remote_jobs)}")
+            job['domain'] = classifier.classify_job(job)
         
         # Deduplicate
-        unique_jobs = deduplicator.deduplicate_jobs(verified_remote_jobs, set())
+        unique_jobs = deduplicator.deduplicate_jobs(raw_jobs, set())
         logger.info(f"✨ Unique remote jobs: {len(unique_jobs)}")
         
-        # Analytics
+        # Show analytics
         sources = {}
         domains = {}
         for job in unique_jobs:
@@ -169,14 +220,13 @@ async def main():
         return {
             "status": "completed",
             "jobs_scraped": len(raw_jobs),
-            "jobs_remote_verified": len(verified_remote_jobs),
             "jobs_unique": len(unique_jobs),
             "jobs_saved": len(unique_jobs),
             "top_sources": dict(list(sources.items())[:5])
         }
         
     except Exception as e:
-        logger.error(f"💥 Enhanced scraper failed: {e}")
+        logger.error(f"💥 Scraper failed: {e}")
         return {"status": "failed", "error": str(e)}
 
 if __name__ == "__main__":
