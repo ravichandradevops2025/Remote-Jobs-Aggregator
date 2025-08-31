@@ -13,7 +13,7 @@ from backend.scrapers.lever import LeverScraper
 from backend.scrapers.generic import GenericScraper
 from backend.services.job_classifier import JobClassifier
 from backend.services.deduplicator import JobDeduplicator
-from backend.services.enhanced_remote_detector import EnhancedRemoteDetector
+from backend.enhanced_remote_detector import EnhancedRemoteDetector
 
 # Import new ATS scrapers with fallbacks
 try:
