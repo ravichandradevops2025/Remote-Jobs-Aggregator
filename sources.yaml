@@ -1,6 +1,6 @@
-# WORKING Remote Job Sources - Tested & Verified 2024
+# COMPREHENSIVE Remote Job Sources - Indian + Global + Tech-Specific
 
-# ✅ WORKING Greenhouse companies (verified slugs)
+# ✅ Working Greenhouse Companies
 greenhouse_companies:
   - slug: "airbnb"
     name: "Airbnb"
@@ -8,113 +8,257 @@ greenhouse_companies:
     name: "Stripe"
   - slug: "gitlab"
     name: "GitLab"
-  # Working Indian companies on Greenhouse
-  - slug: "razorpay"
-    name: "Razorpay" 
-  - slug: "zomato"
-    name: "Zomato"
-  - slug: "swiggy"
-    name: "Swiggy"
 
-# ✅ WORKING Lever companies  
+# ✅ Working Lever Companies  
 lever_companies:
   - slug: "netflix"
     name: "Netflix"
-  # Add more when we find working slugs
+  - slug: "meesho"  # From your Indian list
+    name: "Meesho"
 
-# ✅ VERIFIED Working Remote Job APIs
-remote_job_apis:
-  # Himalayas - Excellent free remote jobs API
-  - url: "https://himalayas.app/jobs/api?limit=100"
-    name: "Himalayas Remote Jobs"
+# 🌟 SPECIALIZED TECH JOB PORTALS
+tech_job_portals:
+  # DevOps & Cloud Focused
+  - url: "https://gitjobs.dev/api/jobs"
+    name: "GitJobs Dev"
     type: "json"
-    remote_only: true
+    focus: "DevOps, Cloud, Git"
     working: true
     
-  # Remotive - Public API with delays
-  - url: "https://remotive.com/api/remote-jobs"
-    name: "Remotive"
+  - url: "https://kubernetes.io/careers/api"
+    name: "Kubernetes Careers"
     type: "json"
-    remote_only: true
-    working: true
+    focus: "Cloud, DevOps, Kubernetes"
+    working: false  # Need to verify API
     
-  # AngelList - Startup jobs (many remote)
-  - url: "https://angel.co/api/jobs?remote=true"
-    name: "AngelList Remote"
+  - url: "https://opensource.fb.com/careers/api"
+    name: "Meta Open Source"
     type: "json"
+    focus: "Open Source, React, Python"
     working: false  # Need to verify
     
-  # JustRemote - Dedicated remote jobs
-  - url: "https://justremote.co/api/remote_jobs"
-    name: "JustRemote"
+  - url: "https://opensourcejobhub.com/api/jobs"
+    name: "Open Source Job Hub"
     type: "json"
-    remote_only: true
+    focus: "Open Source, Linux, DevOps"
+    working: false  # Need to verify
+    
+  - url: "https://www.redhat.com/en/jobs/api"
+    name: "Red Hat Careers"
+    type: "json"
+    focus: "Linux, OpenShift, Cloud"
     working: false  # Need to verify
 
-# ✅ WORKING RSS Feeds  
-rss_feeds:
+# 🇮🇳 INDIAN PRODUCT COMPANIES (Direct Career Pages)
+indian_companies:
+  # Fintech
+  - name: "Razorpay"
+    careers_url: "https://razorpay.com/careers/"
+    api_url: "https://razorpay.com/careers/api/jobs"
+    type: "scrape"
+    focus: "Fintech, Payments, Backend"
+    
+  - name: "PhonePe"
+    careers_url: "https://www.phonepe.com/careers/"
+    api_url: "https://careers.phonepe.com/api/jobs"
+    type: "scrape"
+    focus: "Fintech, Mobile, Backend"
+    
+  - name: "Paytm"
+    careers_url: "https://paytm.com/careers"
+    api_url: "https://careers.paytm.com/api/openings"
+    type: "scrape"
+    focus: "Fintech, Mobile, Full Stack"
+    
+  - name: "CRED"
+    careers_url: "https://careers.cred.club/"
+    type: "scrape"
+    focus: "Fintech, Mobile, Design"
+    
+  - name: "Groww"
+    careers_url: "https://groww.in/careers"
+    type: "scrape"
+    focus: "Fintech, Investment, Mobile"
+    
+  # E-commerce & Food
+  - name: "Flipkart"
+    careers_url: "https://www.flipkartcareers.com/"
+    type: "scrape"
+    focus: "E-commerce, Java, React"
+    
+  - name: "Swiggy"
+    careers_url: "https://careers.swiggy.com/"
+    type: "scrape"
+    focus: "Food Tech, Mobile, Backend"
+    
+  - name: "Zomato"
+    careers_url: "https://careers.smartrecruiters.com/Zomato1"
+    type: "scrape"
+    focus: "Food Tech, Mobile, Data"
+    
+  - name: "BigBasket"
+    careers_url: "https://careers.bigbasket.com/"
+    type: "scrape"
+    focus: "E-commerce, Supply Chain"
+    
+  - name: "Myntra"
+    careers_url: "https://careers.myntra.com/"
+    type: "scrape"
+    focus: "Fashion, Mobile, AI"
+    
+  # SaaS & Enterprise
+  - name: "Freshworks"
+    careers_url: "https://www.freshworks.com/company/careers/"
+    type: "scrape"
+    focus: "SaaS, Customer Support, Ruby"
+    
+  - name: "Zoho"
+    careers_url: "https://www.zoho.com/careers.html"
+    type: "scrape"
+    focus: "SaaS, Enterprise, Java"
+    
+  - name: "Postman"
+    careers_url: "https://www.postman.com/company/careers/"
+    type: "scrape"
+    focus: "APIs, Developer Tools"
+    
+  - name: "BrowserStack"
+    careers_url: "https://www.browserstack.com/careers"
+    type: "scrape"
+    focus: "Testing, DevOps, Infrastructure"
+    
+  - name: "Chargebee"
+    careers_url: "https://www.chargebee.com/careers/"
+    type: "scrape"
+    focus: "SaaS, Billing, Ruby"
+
+# 🌍 GLOBAL REMOTE JOB BOARDS
+global_remote_boards:
+  # Working RSS feeds
   - url: "https://weworkremotely.com/remote-jobs.rss"
     name: "We Work Remotely"
     type: "rss"
     remote_only: true
     working: true
     
-  - url: "https://remoteok.com/remote-jobs.rss"
-    name: "RemoteOK RSS"
-    type: "rss" 
+  - url: "https://remote.co/remote-jobs/rss"
+    name: "Remote.co"
+    type: "rss"
+    remote_only: true
+    working: false  # Need to verify
+    
+  - url: "https://flexjobs.com/api/jobs?remote=true"
+    name: "FlexJobs"
+    type: "json"
+    remote_only: true
+    working: false  # Premium service
+    
+  - url: "https://builtin.com/api/jobs?remote=true"
+    name: "BuiltIn"
+    type: "json"
+    focus: "Tech, Startups"
+    working: false  # Need to verify
+    
+  - url: "https://nodesk.co/api/remote-jobs"
+    name: "NoDesk"
+    type: "json"
+    remote_only: true
+    working: false
+    
+  - url: "https://jobspresso.co/api/remote-jobs"
+    name: "Jobspresso"
+    type: "json"
+    remote_only: true
+    working: false
+    
+  - url: "https://pangian.com/api/job-postings"
+    name: "Pangian"
+    type: "json"
+    remote_only: true
+    working: false
+    
+  - url: "https://remotive.io/api/remote-jobs"
+    name: "Remotive"
+    type: "json"
+    remote_only: true
+    working: true
+    
+  # Working JSON APIs
+  - url: "https://www.workingnomads.co/api/exposed_jobs"
+    name: "Working Nomads"
+    type: "json"
+    remote_only: true
+    working: true
+    
+  - url: "https://himalayas.app/jobs/api?limit=100"
+    name: "Himalayas"
+    type: "json"
     remote_only: true
     working: true
 
-# Indian Job Sources (Manual Company APIs)
-indian_companies:
-  # Major Indian product companies
-  - name: "Flipkart"
-    careers_url: "https://careers.flipkart.com/api/jobs"
-    type: "json"
-    note: "Check if public API available"
-    
-  - name: "PhonePe"
-    careers_url: "https://careers.phonepe.com/jobs"
-    type: "scrape"
-    note: "May need HTML scraping"
-    
-  - name: "CRED"
-    careers_url: "https://careers.cred.club/api/openings"
-    type: "json" 
-    note: "Check if API exists"
-
-# Enhanced Rate Limiting & Detection
+# Enhanced Rate Limiting
 rate_limits:
-  default_delay: 2.0  # Respectful 2-second delay
+  default_delay: 3.0  # Increased for reliability
   max_retries: 3
-  timeout: 30
+  timeout: 45
   respect_robots_txt: true
 
-# IMPROVED Remote Detection Keywords
+# ENHANCED Remote Detection Keywords
 remote_keywords:
   strict:
     - "remote"
     - "100% remote"
-    - "fully remote"
+    - "fully remote" 
     - "remote first"
     - "work from anywhere"
-    - "distributed"
+    - "distributed team"
     - "location independent"
-  
+    - "global remote"
+    
   flexible:
     - "work from home"
-    - "wfh" 
+    - "wfh"
     - "remote friendly"
     - "remote work"
     - "home office"
     - "telecommute"
-    - "virtual"
-    - "anywhere"
+    - "virtual team"
     - "flexible location"
+    - "anywhere in"
+    - "remote position"
 
-# Company-specific remote indicators
+# Company Remote Flags (Always Remote Companies)
 company_remote_flags:
-  gitlab: "always_remote"      # GitLab is 100% remote
-  automattic: "always_remote"  # WordPress.com is 100% remote
-  zapier: "always_remote"      # Zapier is 100% remote
-  buffer: "always_remote"      # Buffer is 100% remote
+  gitlab: "always_remote"
+  automattic: "always_remote" 
+  zapier: "always_remote"
+  buffer: "always_remote"
+  toptal: "always_remote"
+  invision: "always_remote"
+  doist: "always_remote"
+  
+# Job Classification Enhancement
+domain_focus:
+  high_demand:
+    - "DevOps"
+    - "Cloud/AWS"
+    - "Azure"
+    - "GCP"
+    - "Python"
+    - "React"
+    - "Full Stack"
+    - "Data/ML"
+    - "Android"
+    - "Backend"
+  
+  enterprise:
+    - "SAP"
+    - "PowerBI"
+    - "Tableau"
+    - "Security"
+    
+  emerging:
+    - "Blockchain"
+    - "Web3"
+    - "AR/VR"
+    - "IoT"

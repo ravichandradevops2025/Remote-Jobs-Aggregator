@@ -32,17 +32,17 @@ class EnhancedRemoteDetector:
             }
     
     def is_remote_job(self, job_data: Dict[str, Any]) -> bool:
-        """Enhanced remote job detection with company-specific rules"""
+        """Enhanced remote job detection with company-specific rules - FIXED"""
         
-        company = job_data.get('company', '').lower()
+        company = str(job_data.get('company', '')).lower()
         
         # 1. Check company-specific flags first
         for company_key, flag in self.company_flags.items():
             if company_key in company and flag == 'always_remote':
                 return True
         
-        # 2. Get searchable text
-        text_to_check = self._get_searchable_text(job_data)
+        # 2. Get searchable text - FIX: Handle None values
+        text_to_check = self._get_searchable_text_safe(job_data)
         
         # 3. Check for strict remote keywords (high confidence)
         for keyword in self.remote_keywords.get('strict', []):
@@ -60,7 +60,7 @@ class EnhancedRemoteDetector:
             return True
         
         # 5. Location-based detection
-        location = job_data.get('location', '').lower()
+        location = str(job_data.get('location', '')).lower()
         if location:
             remote_locations = [
                 'remote', 'anywhere', 'worldwide', 'global', 
@@ -70,25 +70,30 @@ class EnhancedRemoteDetector:
                 return True
         
         # 6. Title-based detection (high weight)
-        title = job_data.get('title', '').lower()
+        title = str(job_data.get('title', '')).lower()
         if 'remote' in title:
             return True
         
         return False
     
-    def _get_searchable_text(self, job_data: Dict[str, Any]) -> str:
-        """Get all searchable text from job data"""
-        text_fields = [
-            job_data.get('title', ''),
-            job_data.get('description', ''),
-            job_data.get('location', ''),
-        ]
+    def _get_searchable_text_safe(self, job_data: Dict[str, Any]) -> str:
+        """Get all searchable text from job data - SAFE from None values"""
+        text_fields = []
+        
+        # Safely convert all fields to strings
+        for field in ['title', 'description', 'location']:
+            value = job_data.get(field)
+            if value is not None:
+                text_fields.append(str(value))
+            else:
+                text_fields.append('')
+        
         return ' '.join(text_fields).lower()
     
     def get_remote_confidence(self, job_data: Dict[str, Any]) -> float:
         """Return confidence score (0-1) that job is remote"""
-        text = self._get_searchable_text(job_data)
-        company = job_data.get('company', '').lower()
+        text = self._get_searchable_text_safe(job_data)
+        company = str(job_data.get('company', '')).lower()
         
         confidence = 0.0
         
@@ -108,7 +113,7 @@ class EnhancedRemoteDetector:
                 confidence += 0.3
         
         # Location indicators
-        location = job_data.get('location', '').lower()
+        location = str(job_data.get('location', '')).lower()
         if 'remote' in location or 'anywhere' in location:
             confidence += 0.7
             
