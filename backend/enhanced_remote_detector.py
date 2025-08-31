@@ -1,5 +1,4 @@
 # Create the enhanced remote detector file
-cat > backend/services/enhanced_remote_detector.py << 'EOF'
 from typing import Dict, Any
 import logging
 
