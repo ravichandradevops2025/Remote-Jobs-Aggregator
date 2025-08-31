@@ -1,17 +1,17 @@
-name: Nightly Job Scraper
+name: Nightly Job Scraper & Export
 
 on:
   schedule:
-    # Runs at 19:30 UTC (01:00 AM IST next day)
-    - cron: '30 19 * * *'
-  workflow_dispatch: # Allow manual triggering
+    - cron: '30 19 * * *'  # 01:00 AM IST daily
+  workflow_dispatch:  # Manual trigger
 
 jobs:
-  scrape-jobs:
+  scrape-and-export:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout repository
+      uses: actions/checkout@v4
     
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -22,16 +22,43 @@ jobs:
       run: |
         pip install -r requirements.txt
     
-    - name: Run job scraper
+    - name: Run job scraper and export
       env:
         SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
         SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
       run: |
-        python scripts/run_scraper.py
+        echo "🚀 Starting job scraper and export..."
+        python scripts/export_jobs.py
     
-    - name: Notify on failure
-      if: failure()
+    - name: Create job summary report
       run: |
-        echo "Job scraping failed at $(date)"
-        # Add notification logic here (email, Slack, etc.)
+        echo "📊 Creating summary report..."
+        python scripts/create_summary.py
+    
+    - name: Generate timestamp for artifacts
+      id: timestamp
+      run: echo "timestamp=$(date +'%Y-%m-%d_%H-%M-%S')" >> $GITHUB_OUTPUT
+    
+    - name: Upload job data as artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: remote-jobs-${{ steps.timestamp.outputs.timestamp }}
+        path: |
+          scraped_jobs.json
+          job_browser.html
+          jobs_summary.txt
+        retention-days: 30
+    
+    - name: Display job summary in workflow
+      run: |
+        echo "## 📋 Job Scraping Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        cat jobs_summary.txt >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "📁 **Download the complete job data from the Artifacts section below**" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Files Generated:" >> $GITHUB_STEP_SUMMARY
+        echo "- 📄 \`scraped_jobs.json\` - All jobs in JSON format" >> $GITHUB_STEP_SUMMARY
+        echo "- 🌐 \`job_browser.html\` - Interactive web browser for jobs" >> $GITHUB_STEP_SUMMARY
+        echo "- 📊 \`jobs_summary.txt\` - Quick statistics and overview" >> $GITHUB_STEP_SUMMARY
