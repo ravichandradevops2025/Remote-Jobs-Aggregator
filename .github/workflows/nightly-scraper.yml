@@ -1,15 +1,12 @@
-name: Nightly Job Scraper & Export
+name: Nightly Job Scraper & Email Export
 
 on:
-  push:        # runs on every push
-    branches:
-      - main   # or master if that's your default branch
-  workflow_dispatch:   # manual trigger
   schedule:
     - cron: '30 19 * * *'  # 01:00 AM IST daily
+  workflow_dispatch:  # Manual trigger
 
 jobs:
-  scrape-and-export:
+  scrape-and-email:
     runs-on: ubuntu-latest
     
     steps:
@@ -31,19 +28,24 @@ jobs:
         SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
       run: |
-        echo "🚀 Starting job scraper and export..."
+        echo "🚀 Starting daily job scraper at $(date)"
         python scripts/export_jobs.py
     
-    - name: Create job summary report
-      run: |
-        echo "📊 Creating summary report..."
-        python scripts/create_summary.py
-    
-    - name: Generate timestamp for artifacts
+    - name: Generate timestamp for files
       id: timestamp
-      run: echo "timestamp=$(date +'%Y-%m-%d_%H-%M-%S')" >> $GITHUB_OUTPUT
+      run: |
+        echo "timestamp=$(date +'%Y-%m-%d_%H-%M-%S')" >> $GITHUB_OUTPUT
+        echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+        echo "jobs_count=$(python -c 'import json; data=json.load(open("scraped_jobs.json")); print(len(data.get("jobs", [])))')" >> $GITHUB_OUTPUT
     
-    - name: Upload job data as artifacts
+    - name: Create zip package for email
+      run: |
+        zip -r "remote-jobs-${{ steps.timestamp.outputs.timestamp }}.zip" \
+          scraped_jobs.json \
+          job_browser.html \
+          jobs_summary.txt
+    
+    - name: Upload artifacts (backup)
       uses: actions/upload-artifact@v4
       with:
         name: remote-jobs-${{ steps.timestamp.outputs.timestamp }}
@@ -51,17 +53,48 @@ jobs:
           scraped_jobs.json
           job_browser.html
           jobs_summary.txt
+          remote-jobs-${{ steps.timestamp.outputs.timestamp }}.zip
         retention-days: 30
     
-    - name: Display job summary in workflow
+    - name: Send email with job data
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: smtp.gmail.com
+        server_port: 587
+        username: ${{ secrets.EMAIL_USERNAME }}
+        password: ${{ secrets.EMAIL_PASSWORD }}
+        subject: "Daily Remote Jobs Report - ${{ steps.timestamp.outputs.date }} (${{ steps.timestamp.outputs.jobs_count }} jobs found)"
+        to: ravichandra.devops2025@gmail.com
+        from: Remote Jobs Bot <${{ secrets.EMAIL_USERNAME }}>
+        html_body: |
+          <h2>📊 Daily Remote Jobs Report</h2>
+          <p><strong>Date:</strong> ${{ steps.timestamp.outputs.date }}</p>
+          <p><strong>Total Jobs Found:</strong> ${{ steps.timestamp.outputs.jobs_count }}</p>
+          <p><strong>Scraping Time:</strong> ${{ steps.timestamp.outputs.timestamp }}</p>
+          
+          <h3>📁 Files Attached:</h3>
+          <ul>
+            <li><strong>remote-jobs-${{ steps.timestamp.outputs.timestamp }}.zip</strong> - Complete job data package</li>
+          </ul>
+          
+          <h3>📋 Quick Summary:</h3>
+          <p>Your daily remote jobs have been collected and packaged. The zip file contains:</p>
+          <ul>
+            <li><code>scraped_jobs.json</code> - All job data with apply URLs</li>
+            <li><code>job_browser.html</code> - Interactive web interface</li>
+            <li><code>jobs_summary.txt</code> - Statistics and breakdown</li>
+          </ul>
+          
+          <p><em>This automated report runs daily at 1:00 AM IST.</em></p>
+        attachments: |
+          remote-jobs-${{ steps.timestamp.outputs.timestamp }}.zip
+    
+    - name: Display summary in workflow
       run: |
-        echo "## 📋 Job Scraping Summary" >> $GITHUB_STEP_SUMMARY
+        echo "## 📧 Email Sent Successfully" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Recipient:** ravichandra.devops2025@gmail.com" >> $GITHUB_STEP_SUMMARY
+        echo "**Jobs Found:** ${{ steps.timestamp.outputs.jobs_count }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Date:** ${{ steps.timestamp.outputs.date }}" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         cat jobs_summary.txt >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "📁 **Download the complete job data from the Artifacts section below**" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### Files Generated:" >> $GITHUB_STEP_SUMMARY
-        echo "- 📄 \`scraped_jobs.json\` - All jobs in JSON format" >> $GITHUB_STEP_SUMMARY
-        echo "- 🌐 \`job_browser.html\` - Interactive web browser for jobs" >> $GITHUB_STEP_SUMMARY
-        echo "- 📊 \`jobs_summary.txt\` - Quick statistics and overview" >> $GITHUB_STEP_SUMMARY

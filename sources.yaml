@@ -228,3 +228,153 @@ remote_keywords:
     - "remote work available"
     - "location flexible"
     - "virtual position"
+
+
+    # ✅ Working Greenhouse Companies
+greenhouse_companies:
+  - slug: "airbnb"
+    name: "Airbnb"
+  - slug: "stripe" 
+    name: "Stripe"
+  - slug: "gitlab"
+    name: "GitLab"
+
+# ✅ Working Lever Companies
+lever_companies:
+  - slug: "spotify"
+    name: "Spotify"
+  - slug: "netflix"
+    name: "Netflix"
+
+# 📡 HIGH-QUALITY RSS FEEDS (Updated frequently)
+reliable_rss_sources:
+  # Primary reliable sources
+  - url: "https://weworkremotely.com/remote-jobs.rss"
+    name: "We Work Remotely"
+    type: "rss"
+    remote_only: true
+    update_frequency: "daily"
+    working: true
+    
+  # Additional RSS sources that update frequently
+  - url: "https://remotive.io/remote-jobs.rss"
+    name: "Remotive RSS"
+    type: "rss"
+    remote_only: true
+    update_frequency: "weekly"
+    working: true
+    
+  - url: "https://justremote.co/feed"
+    name: "JustRemote Feed"
+    type: "rss"
+    remote_only: true
+    update_frequency: "daily"
+    working: true
+    
+  - url: "https://remote.co/remote-jobs/rss"
+    name: "Remote.co RSS"
+    type: "rss"
+    remote_only: true
+    update_frequency: "daily"
+    working: false
+    
+  # Tech-specific RSS feeds
+  - url: "https://authenticjobs.com/rss/custom.php?terms=remote"
+    name: "Authentic Jobs Remote"
+    type: "rss"
+    focus: "Creative + Tech"
+    working: false
+    
+  - url: "https://www.flexjobs.com/rss/remote-jobs"
+    name: "FlexJobs Remote RSS"
+    type: "rss"
+    remote_only: true
+    working: false
+
+# 🌐 JSON API Sources (Fresh data)
+json_api_sources:
+  - url: "https://www.workingnomads.co/api/exposed_jobs"
+    name: "Working Nomads"
+    type: "json"
+    remote_only: true
+    update_frequency: "daily"
+    working: true
+    
+  - url: "https://himalayas.app/jobs/api?limit=100&date_posted=15_days"
+    name: "Himalayas Recent"
+    type: "json"
+    remote_only: true
+    date_filter: "15_days"
+    working: true
+    
+  - url: "https://remotive.io/api/remote-jobs?limit=100&since=15_days"
+    name: "Remotive Recent"
+    type: "json"
+    remote_only: true
+    date_filter: "15_days"
+    working: true
+
+# 🔍 ALTERNATIVE JOB SOURCES (Less blocked)
+alternative_sources:
+  # Startup-focused sources
+  - url: "https://angel.co/api/jobs?remote=true&posted_since=15_days"
+    name: "AngelList Recent Remote"
+    type: "json"
+    focus: "Startups"
+    working: false
+    
+  # European tech jobs
+  - url: "https://landing.jobs/api/v1/jobs?remote=true&since=15_days"
+    name: "Landing Jobs Recent"
+    type: "json"
+    focus: "European tech"
+    working: false
+    
+  # Remote-specific aggregators
+  - url: "https://nowhiteboard.org/rss"
+    name: "No Whiteboard RSS"
+    type: "rss"
+    focus: "No algorithm interviews"
+    working: false
+    
+  # Crypto/Web3 (often remote)
+  - url: "https://cryptocurrencyjobs.co/rss"
+    name: "Crypto Jobs RSS"
+    type: "rss"
+    focus: "Blockchain, Web3"
+    working: false
+
+# 🇮🇳 INDIAN COMPANY RSS FEEDS
+indian_company_feeds:
+  # Research-based RSS feeds for Indian companies
+  - url: "https://careers.razorpay.com/rss"
+    name: "Razorpay RSS"
+    type: "rss"
+    working: false
+    
+  - url: "https://careers.swiggy.com/feed"
+    name: "Swiggy RSS"
+    type: "rss"  
+    working: false
+    
+  - url: "https://careers.zomato.com/rss"
+    name: "Zomato RSS"
+    type: "rss"
+    working: false
+
+# Enhanced Configuration
+date_filtering:
+  enabled: true
+  days_back: 15
+  priority_recent: true
+  
+rate_limits:
+  default_delay: 2.0
+  max_retries: 3
+  timeout: 30
+
+email_settings:
+  recipient: "ravichandra.devops2025@gmail.com"
+  send_daily: true
+  include_summary: true
+  attach_zip: true
