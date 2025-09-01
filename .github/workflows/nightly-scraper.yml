@@ -1,9 +1,17 @@
-name: Nightly Job Scraper & Email Export
+name: Remote Jobs Scraper & Email Export
 
 on:
   schedule:
     - cron: '30 19 * * *'  # 01:00 AM IST daily
-  workflow_dispatch:  # Manual trigger
+  workflow_dispatch:      # Manual trigger button
+  push:                   # Run on every push
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+      - 'scripts/**'
+      - 'sources.yaml'
+      - '.github/workflows/**'
 
 jobs:
   scrape-and-email:
@@ -28,73 +36,139 @@ jobs:
         SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
       run: |
-        echo "🚀 Starting daily job scraper at $(date)"
+        echo "🚀 Starting job scraper at $(date)"
+        echo "Trigger: ${{ github.event_name }}"
         python scripts/export_jobs.py
     
-    - name: Generate timestamp for files
-      id: timestamp
+    - name: Generate metadata
+      id: metadata
       run: |
         echo "timestamp=$(date +'%Y-%m-%d_%H-%M-%S')" >> $GITHUB_OUTPUT
         echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
-        echo "jobs_count=$(python -c 'import json; data=json.load(open("scraped_jobs.json")); print(len(data.get("jobs", [])))')" >> $GITHUB_OUTPUT
+        echo "trigger=${{ github.event_name }}" >> $GITHUB_OUTPUT
+        if [ -f scraped_jobs.json ]; then
+          echo "jobs_count=$(python -c 'import json; data=json.load(open("scraped_jobs.json")); print(len(data.get("jobs", [])))')" >> $GITHUB_OUTPUT
+        else
+          echo "jobs_count=0" >> $GITHUB_OUTPUT
+        fi
     
-    - name: Create zip package for email
+    - name: Create zip package
       run: |
-        zip -r "remote-jobs-${{ steps.timestamp.outputs.timestamp }}.zip" \
-          scraped_jobs.json \
-          job_browser.html \
-          jobs_summary.txt
+        if [ -f scraped_jobs.json ]; then
+          zip -r "remote-jobs-${{ steps.metadata.outputs.timestamp }}.zip" \
+            scraped_jobs.json \
+            job_browser.html \
+            jobs_summary.txt
+        else
+          echo "No job files found to zip"
+        fi
     
-    - name: Upload artifacts (backup)
+    - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: remote-jobs-${{ steps.timestamp.outputs.timestamp }}
+        name: remote-jobs-${{ steps.metadata.outputs.timestamp }}
         path: |
           scraped_jobs.json
           job_browser.html
           jobs_summary.txt
-          remote-jobs-${{ steps.timestamp.outputs.timestamp }}.zip
+          remote-jobs-*.zip
         retention-days: 30
     
-    - name: Send email with job data
+    - name: Determine email subject
+      id: email_subject
+      run: |
+        if [ "${{ steps.metadata.outputs.trigger }}" = "schedule" ]; then
+          echo "subject=Daily Remote Jobs Report - ${{ steps.metadata.outputs.date }} (${{ steps.metadata.outputs.jobs_count }} jobs)" >> $GITHUB_OUTPUT
+        elif [ "${{ steps.metadata.outputs.trigger }}" = "workflow_dispatch" ]; then
+          echo "subject=Manual Remote Jobs Report - ${{ steps.metadata.outputs.date }} (${{ steps.metadata.outputs.jobs_count }} jobs)" >> $GITHUB_OUTPUT
+        else
+          echo "subject=Updated Remote Jobs Report - ${{ steps.metadata.outputs.date }} (${{ steps.metadata.outputs.jobs_count }} jobs)" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Send email notification
+      if: steps.metadata.outputs.jobs_count > 0
       uses: dawidd6/action-send-mail@v3
       with:
         server_address: smtp.gmail.com
         server_port: 587
         username: ${{ secrets.EMAIL_USERNAME }}
         password: ${{ secrets.EMAIL_PASSWORD }}
-        subject: "Daily Remote Jobs Report - ${{ steps.timestamp.outputs.date }} (${{ steps.timestamp.outputs.jobs_count }} jobs found)"
+        subject: ${{ steps.email_subject.outputs.subject }}
         to: ravichandra.devops2025@gmail.com
         from: Remote Jobs Bot <${{ secrets.EMAIL_USERNAME }}>
         html_body: |
-          <h2>📊 Daily Remote Jobs Report</h2>
-          <p><strong>Date:</strong> ${{ steps.timestamp.outputs.date }}</p>
-          <p><strong>Total Jobs Found:</strong> ${{ steps.timestamp.outputs.jobs_count }}</p>
-          <p><strong>Scraping Time:</strong> ${{ steps.timestamp.outputs.timestamp }}</p>
-          
-          <h3>📁 Files Attached:</h3>
-          <ul>
-            <li><strong>remote-jobs-${{ steps.timestamp.outputs.timestamp }}.zip</strong> - Complete job data package</li>
-          </ul>
-          
-          <h3>📋 Quick Summary:</h3>
-          <p>Your daily remote jobs have been collected and packaged. The zip file contains:</p>
-          <ul>
-            <li><code>scraped_jobs.json</code> - All job data with apply URLs</li>
-            <li><code>job_browser.html</code> - Interactive web interface</li>
-            <li><code>jobs_summary.txt</code> - Statistics and breakdown</li>
-          </ul>
-          
-          <p><em>This automated report runs daily at 1:00 AM IST.</em></p>
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #667eea;">📊 Remote Jobs Report</h2>
+            
+            <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <p><strong>📅 Date:</strong> ${{ steps.metadata.outputs.date }}</p>
+              <p><strong>🎯 Trigger:</strong> ${{ steps.metadata.outputs.trigger }}</p>
+              <p><strong>📊 Total Jobs Found:</strong> ${{ steps.metadata.outputs.jobs_count }}</p>
+              <p><strong>⏰ Generated At:</strong> ${{ steps.metadata.outputs.timestamp }}</p>
+            </div>
+            
+            <h3 style="color: #4a5568;">📁 Files Attached</h3>
+            <ul>
+              <li><strong>remote-jobs-${{ steps.metadata.outputs.timestamp }}.zip</strong> - Complete job data package</li>
+            </ul>
+            
+            <h3 style="color: #4a5568;">📋 Package Contents</h3>
+            <div style="background: #edf2f7; padding: 15px; border-radius: 8px;">
+              <ul style="margin: 0; padding-left: 20px;">
+                <li><code>scraped_jobs.json</code> - All job data with apply URLs</li>
+                <li><code>job_browser.html</code> - Interactive web interface</li>
+                <li><code>jobs_summary.txt</code> - Statistics and breakdown</li>
+              </ul>
+            </div>
+            
+            <div style="margin-top: 30px; padding: 15px; background: #e6fffa; border-left: 4px solid #38b2ac; border-radius: 4px;">
+              <p style="margin: 0;"><strong>ℹ️ Note:</strong> 
+              ${{ steps.metadata.outputs.trigger == 'schedule' && 'This is your daily automated report.' || steps.metadata.outputs.trigger == 'workflow_dispatch' && 'This report was manually triggered.' || 'This report was triggered by code changes.' }}
+              </p>
+            </div>
+            
+            <hr style="margin: 30px 0; border: none; height: 1px; background: #e2e8f0;">
+            <p style="color: #718096; font-size: 14px;">
+              🤖 Remote Jobs Bot | Automated at 1:00 AM IST daily
+            </p>
+          </div>
         attachments: |
-          remote-jobs-${{ steps.timestamp.outputs.timestamp }}.zip
+          remote-jobs-${{ steps.metadata.outputs.timestamp }}.zip
     
-    - name: Display summary in workflow
+    - name: Send error notification
+      if: failure()
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: smtp.gmail.com
+        server_port: 587
+        username: ${{ secrets.EMAIL_USERNAME }}
+        password: ${{ secrets.EMAIL_PASSWORD }}
+        subject: "❌ Remote Jobs Scraper Failed - ${{ steps.metadata.outputs.date }}"
+        to: ravichandra.devops2025@gmail.com
+        from: Remote Jobs Bot <${{ secrets.EMAIL_USERNAME }}>
+        html_body: |
+          <h2 style="color: #e53e3e;">❌ Job Scraper Failed</h2>
+          <p><strong>Date:</strong> ${{ steps.metadata.outputs.date }}</p>
+          <p><strong>Trigger:</strong> ${{ steps.metadata.outputs.trigger }}</p>
+          <p><strong>Error:</strong> The job scraping workflow encountered an error.</p>
+          <p>Please check the <a href="https://github.com/ravichandradevops2025/Remote-Jobs-Aggregator/actions">GitHub Actions logs</a> for details.</p>
+    
+    - name: Display workflow summary
       run: |
-        echo "## 📧 Email Sent Successfully" >> $GITHUB_STEP_SUMMARY
+        echo "## 📊 Job Scraper Results" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Recipient:** ravichandra.devops2025@gmail.com" >> $GITHUB_STEP_SUMMARY
-        echo "**Jobs Found:** ${{ steps.timestamp.outputs.jobs_count }}" >> $GITHUB_STEP_SUMMARY
-        echo "**Date:** ${{ steps.timestamp.outputs.date }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Trigger:** ${{ steps.metadata.outputs.trigger }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Date:** ${{ steps.metadata.outputs.date }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Jobs Found:** ${{ steps.metadata.outputs.jobs_count }}" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        cat jobs_summary.txt >> $GITHUB_STEP_SUMMARY
+        
+        if [ "${{ steps.metadata.outputs.jobs_count }}" -gt "0" ]; then
+          echo "✅ **Email sent to:** ravichandra.devops2025@gmail.com" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f jobs_summary.txt ]; then
+            echo "### 📋 Summary" >> $GITHUB_STEP_SUMMARY
+            head -20 jobs_summary.txt >> $GITHUB_STEP_SUMMARY
+          fi
+        else
+          echo "❌ **No jobs found - Email not sent**" >> $GITHUB_STEP_SUMMARY
+        fi
